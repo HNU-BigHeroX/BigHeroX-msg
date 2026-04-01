@@ -1,6 +1,6 @@
 <div align="center">
 
-# bitbots_msgs
+# BigHeroX_msgs
 
 <img src="log.jpg" alt="BigHeroX Logo" width="280"/>
 
@@ -66,7 +66,6 @@
 | `DynamicKick.action`   | 动态踢球控制   |
 
 ---
-
 
 ## Changelog
 
