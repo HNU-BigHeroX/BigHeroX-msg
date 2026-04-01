@@ -1,0 +1,14 @@
+# Goal
+string animation
+bool hcm
+bool bounds
+uint8 start
+uint8 end
+
+---
+# Result
+bool successful
+
+---
+# Feedback
+uint8 percent_done

@@ -1,0 +1,17 @@
+# Goal
+geometry_msgs/Point ball_position
+geometry_msgs/Vector3 kick_direction
+float32 kick_speed
+uint8 FOOT_LEFT = 1
+uint8 FOOT_RIGHT = 2
+uint8 kick_foot
+
+---
+# Result
+bool success
+string message
+
+---
+# Feedback
+string state
+float32 distance_to_ball
