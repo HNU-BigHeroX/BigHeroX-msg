@@ -34,7 +34,7 @@
 | 运控 Motion        | 行走、踢球、起身、头部控制      |
 | 通信 Communication | GameController 接收、队伍间通信 |
 
-完整接口规范见 **[design.md](./design.md)**。
+完整接口规范见 **[design.md](./design.md)**
 
 ---
 
