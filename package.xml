@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>BigHeroX_msg</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>Custom ROS2 messages and actions for RoboCup HSL 2026 interface</description>
 
   <maintainer email="info@example.com">BigHeroX</maintainer>

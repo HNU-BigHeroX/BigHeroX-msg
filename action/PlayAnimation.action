@@ -1,9 +1,13 @@
 # Goal
-string animation
-bool hcm
-bool bounds
-uint8 start
-uint8 end
+std_msgs/Header header
+int64 timestamp           # 纳秒时间戳
+int64 index               # 消息序列号
+
+string animation          # 动画名称，对应 RemoteControlChange_ model 值
+bool hcm                  # 是否来自 HCM（高优先级）
+bool bounds               # 是否检查关节限位
+uint8 start               # 起始帧
+uint8 end                 # 结束帧
 
 ---
 # Result

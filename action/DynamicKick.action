@@ -1,4 +1,8 @@
 # Goal
+std_msgs/Header header
+int64 timestamp           # 纳秒时间戳
+int64 index               # 消息序列号
+
 geometry_msgs/Point ball_position
 geometry_msgs/Vector3 kick_direction
 float32 kick_speed

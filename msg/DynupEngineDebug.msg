@@ -1,9 +1,16 @@
+# 起身引擎调试信息
+# 话题: debug/dynup_engine
+
 std_msgs/Header header
+
+# 元数据
+int64 timestamp        # 纳秒时间戳
+int64 index            # 消息序列号
 
 string direction
 string phase
 
-# Completion percentage [0, 100]
+# 完成百分比 [0, 100]
 float32 percent_done
 
 geometry_msgs/Point left_foot_pos

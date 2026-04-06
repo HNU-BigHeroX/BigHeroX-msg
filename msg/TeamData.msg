@@ -1,5 +1,9 @@
 std_msgs/Header header
 
+# 元数据
+int64 timestamp        # 纳秒时间戳
+int64 index            # 消息序列号
+
 uint8 robot_id
 
 uint8 STATE_UNKNOWN = 0

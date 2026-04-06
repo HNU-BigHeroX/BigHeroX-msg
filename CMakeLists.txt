@@ -13,20 +13,27 @@ find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(
   ${PROJECT_NAME}
-  "msg/RobotControlState.msg"
-  "msg/Strategy.msg"
-  "msg/RobotRelative.msg"
-  "msg/RobotRelativeArray.msg"
-  "msg/TeamData.msg"
-  "msg/HeadMode.msg"
-  "msg/JointCommand.msg"
-  "msg/KickGoal.msg"
+  # 控制接口 (对齐 Zvalley SDK 高层/底层服务)
+  "msg/RobotControlState.msg"   # /change_cmd        <- RemoteControlChange_  (高层，无rt/前缀)
+  "msg/MotionCommand.msg"       # /motion_cmd        <- RemoteControlMotion_  (高层，无rt/前缀)
+  "msg/JointCommand.msg"        # rt/all_joint_cmd   <- AllJointCmd_          (底层DDS)
+  "msg/JointState.msg"          # rt/all_joint_state <- AllJointState_        (底层DDS)
+  "msg/HeadMode.msg"            # /head_cmd          (高层，无rt/前缀)
+  "msg/KickGoal.msg"            # 踢球目标参数
+  "msg/Animation.msg"           # 动画/预设动作
+  # 感知接口
   "msg/FieldFeature.msg"
   "msg/FieldFeatureArray.msg"
+  "msg/RobotRelative.msg"
+  "msg/RobotRelativeArray.msg"
+  # 决策接口
+  "msg/Strategy.msg"
+  "msg/TeamData.msg"
+  # 调试接口 (debug/)
   "msg/WalkEngineDebug.msg"
   "msg/KickDebug.msg"
   "msg/DynupEngineDebug.msg"
-  "msg/Animation.msg"
+  # 动作接口
   "action/PlayAnimation.action"
   "action/DynamicKick.action"
   DEPENDENCIES

@@ -1,5 +1,9 @@
 std_msgs/Header header
 
+# 元数据
+int64 timestamp        # 纳秒时间戳
+int64 index            # 消息序列号
+
 uint8 ROLE_UNDEFINED = 0
 uint8 ROLE_IDLING = 1
 uint8 ROLE_OTHER = 2

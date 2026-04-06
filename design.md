@@ -15,7 +15,7 @@
 ### 技术栈
 
 - **ROS2 版本**：Humble Hawksbill
-- **通信中间件**：DDS (Fast-DDS)
+- **通信中间件**：DDS (Cyclone DDS)
 - **编程语言**：Python 3.10+ / C++17
 - **消息定义**：ROS2 IDL (Interface Definition Language)
 - **坐标系管理**：TF2
@@ -63,9 +63,9 @@ graph TB
     
     SM -->|/robot_state| BP
     SP -->|/strategy| BP
-    BP -->|/cmd_vel| WE
+    BP -->|/motion_cmd| WE
     BP -->|/kick| KE
-    BP -->|/head_mode| HC
+    BP -->|/head_cmd| HC
     
     BD -->|/ball_position_relative_filtered| BP
     LOC -->|/pose_with_covariance| BP
@@ -75,14 +75,14 @@ graph TB
     KE --> JC
     DU --> JC
     HC --> JC
-    JC -->|/DynamixelController/command| SERVO
+    JC -->|rt/all_joint_cmd| SERVO
     
     IMU -->|/imu/data| LOC
     IMU -->|/imu/data| WE
     CAM -->|/camera/image_raw| BD
     CAM -->|/camera/image_raw| RD
     CAM -->|/camera/image_raw| FD
-    SERVO -->|/joint_states| JC
+    SERVO -->|rt/all_joint_state| JC
 ```
 
 
@@ -165,11 +165,12 @@ map -> odom -> base_footprint -> base_link -> [各关节和传感器坐标系]
 
 | 话题名称 | 消息类型 | QoS | 频率 | 说明 |
 |---------|---------|-----|------|------|
-| `/robot_state` | `bitbots_msgs/RobotControlState` | TRANSIENT_LOCAL, depth=1 | 事件触发 | 机器人当前状态（INITIAL/READY/SET/PLAYING/FINISHED） |
-| `/strategy` | `bitbots_msgs/Strategy` | RELIABLE, depth=1 | 1-10 Hz | 当前策略（角色、动作、进攻侧） |
-| `/cmd_vel` | `geometry_msgs/Twist` | RELIABLE, depth=1 | 10-30 Hz | 行走速度命令（线速度和角速度） |
-| `/kick` | `bitbots_msgs/KickGoal` | RELIABLE, depth=1 | 事件触发 | 踢球命令（脚、力度、方向） |
-| `/head_mode` | `bitbots_msgs/HeadMode` | RELIABLE, depth=1 | 1-5 Hz | 头部控制模式（跟踪球、扫描、固定） |
+| `/robot_state` | `BigHeroX_msg/RobotControlState` | TRANSIENT_LOCAL, depth=1 | 事件触发 | 机器人当前状态（INITIAL/READY/SET/PLAYING/FINISHED） |
+| `/strategy` | `BigHeroX_msg/Strategy` | RELIABLE, depth=1 | 1-10 Hz | 当前策略（角色、动作、进攻侧） |
+| `/motion_cmd` | `BigHeroX_msg/MotionCommand` | RELIABLE, depth=1 | 10-30 Hz | 行走速度命令（对齐 SDK RemoteControlMotion_） |
+| `/change_cmd` | `BigHeroX_msg/RobotControlState` | RELIABLE, depth=1 | 事件触发 | 状态/模型切换（对齐 SDK RemoteControlChange_） |
+| `/kick` | `BigHeroX_msg/KickGoal` | RELIABLE, depth=1 | 事件触发 | 踢球命令（脚、力度、方向） |
+| `/head_cmd` | `BigHeroX_msg/HeadMode` | RELIABLE, depth=1 | 1-5 Hz | 头部控制模式（跟踪球、扫描、固定） |
 | `/time_to_ball` | `std_msgs/Float32` | RELIABLE, depth=1 | 5 Hz | 到达球位置的预估时间（秒） |
 
 ##### 订阅话题
@@ -177,10 +178,10 @@ map -> odom -> base_footprint -> base_link -> [各关节和传感器坐标系]
 | 话题名称 | 消息类型 | QoS | 说明 |
 |---------|---------|-----|------|
 | `/gamestate` | `game_controller_spl_interfaces/GameState` | TRANSIENT_LOCAL, depth=1 | GameController 比赛状态 |
-| `/team_data` | `bitbots_msgs/TeamData` | RELIABLE, depth=10 | 队友共享数据 |
+| `/team_data` | `BigHeroX_msg/TeamData` | RELIABLE, depth=10 | 队友共享数据 |
 | `/ball_position_relative_filtered` | `geometry_msgs/PoseWithCovarianceStamped` | RELIABLE, depth=1 | 球的相对位置（滤波后） |
 | `/pose_with_covariance` | `geometry_msgs/PoseWithCovarianceStamped` | RELIABLE, depth=1 | 机器人全局位姿 |
-| `/robots_relative` | `bitbots_msgs/RobotRelativeArray` | RELIABLE, depth=1 | 检测到的机器人列表 |
+| `/robots_relative` | `BigHeroX_msg/RobotRelativeArray` | RELIABLE, depth=1 | 检测到的机器人列表 |
 | `/imu/data` | `sensor_msgs/Imu` | RELIABLE, depth=1 | IMU 数据（用于跌倒检测） |
 
 #### 3.2 感知模块接口
@@ -191,9 +192,9 @@ map -> odom -> base_footprint -> base_link -> [各关节和传感器坐标系]
 |---------|---------|-----|------|------|
 | `/ball_position_relative_filtered` | `geometry_msgs/PoseWithCovarianceStamped` | RELIABLE, depth=1 | 10-30 Hz | 球的相对位置（base_footprint 坐标系） |
 | `/ball_velocity` | `geometry_msgs/TwistWithCovarianceStamped` | RELIABLE, depth=1 | 10-30 Hz | 球的速度估计 |
-| `/robots_relative` | `bitbots_msgs/RobotRelativeArray` | RELIABLE, depth=1 | 5-10 Hz | 检测到的机器人（相对位置） |
+| `/robots_relative` | `BigHeroX_msg/RobotRelativeArray` | RELIABLE, depth=1 | 5-10 Hz | 检测到的机器人（相对位置） |
 | `/pose_with_covariance` | `geometry_msgs/PoseWithCovarianceStamped` | RELIABLE, depth=1 | 10-30 Hz | 机器人全局位姿（map 坐标系） |
-| `/field_features` | `bitbots_msgs/FieldFeatureArray` | RELIABLE, depth=1 | 5-10 Hz | 场地特征（线、球门柱等） |
+| `/field_features` | `BigHeroX_msg/FieldFeatureArray` | RELIABLE, depth=1 | 5-10 Hz | 场地特征（线、球门柱等） |
 | `/debug/vision` | `sensor_msgs/Image` | BEST_EFFORT, depth=1 | 5-10 Hz | 调试可视化图像 |
 
 ##### 订阅话题
@@ -211,23 +212,23 @@ map -> odom -> base_footprint -> base_link -> [各关节和传感器坐标系]
 
 | 话题名称 | 消息类型 | QoS | 频率 | 说明 |
 |---------|---------|-----|------|------|
-| `/DynamixelController/command` | `bitbots_msgs/JointCommand` | RELIABLE, depth=1 | 50-100 Hz | 关节控制命令 |
-| `/walk_engine_debug` | `bitbots_msgs/WalkEngineDebug` | BEST_EFFORT, depth=1 | 50 Hz | 行走引擎调试信息 |
-| `/kick_debug` | `bitbots_msgs/KickDebug` | BEST_EFFORT, depth=1 | 事件触发 | 踢球调试信息 |
+| `rt/all_joint_cmd` | `BigHeroX_msg/JointCommand` | RELIABLE, depth=1 | 50-100 Hz | 关节控制命令（对齐 SDK AllJointCmd_） |
+| `/walk_engine_debug` | `BigHeroX_msg/WalkEngineDebug` | BEST_EFFORT, depth=1 | 50 Hz | 行走引擎调试信息 |
+| `/kick_debug` | `BigHeroX_msg/KickDebug` | BEST_EFFORT, depth=1 | 事件触发 | 踢球调试信息 |
 | `/dynup_state` | `std_msgs/String` | RELIABLE, depth=1 | 10 Hz | 起身状态 |
-| `/dynup_debug` | `bitbots_msgs/DynupEngineDebug` | BEST_EFFORT, depth=1 | 10 Hz | 起身调试信息 |
+| `/dynup_debug` | `BigHeroX_msg/DynupEngineDebug` | BEST_EFFORT, depth=1 | 10 Hz | 起身调试信息 |
 | `/center_of_mass` | `geometry_msgs/PointStamped` | BEST_EFFORT, depth=1 | 50 Hz | 质心位置 |
-| `/animation` | `bitbots_msgs/Animation` | RELIABLE, depth=1 | 事件触发 | 动画播放状态 |
+| `/animation` | `BigHeroX_msg/Animation` | RELIABLE, depth=1 | 事件触发 | 动画播放状态 |
 
 ##### 订阅话题
 
 | 话题名称 | 消息类型 | QoS | 说明 |
 |---------|---------|-----|------|
-| `/cmd_vel` | `geometry_msgs/Twist` | RELIABLE, depth=1 | 行走速度命令 |
-| `/kick` | `bitbots_msgs/KickGoal` | RELIABLE, depth=1 | 踢球命令 |
-| `/head_mode` | `bitbots_msgs/HeadMode` | RELIABLE, depth=1 | 头部控制模式 |
+| `/motion_cmd` | `BigHeroX_msg/MotionCommand` | RELIABLE, depth=1 | 行走速度命令（对齐 SDK RemoteControlMotion_） |
+| `/kick` | `BigHeroX_msg/KickGoal` | RELIABLE, depth=1 | 踢球命令 |
+| `/head_cmd` | `BigHeroX_msg/HeadMode` | RELIABLE, depth=1 | 头部控制模式 |
+| `rt/all_joint_state` | `BigHeroX_msg/JointState` | RELIABLE, depth=1 | 当前关节状态（对齐 SDK AllJointState_） |
 | `/imu/data` | `sensor_msgs/Imu` | RELIABLE, depth=1 | IMU 数据（用于平衡控制） |
-| `/joint_states` | `sensor_msgs/JointState` | RELIABLE, depth=1 | 当前关节状态 |
 
 
 
@@ -238,7 +239,7 @@ map -> odom -> base_footprint -> base_link -> [各关节和传感器坐标系]
 | 话题名称 | 消息类型 | QoS | 频率 | 说明 |
 |---------|---------|-----|------|------|
 | `/gamestate` | `game_controller_spl_interfaces/GameState` | TRANSIENT_LOCAL, depth=1 | 2 Hz | GameController 比赛状态 |
-| `/team_data` | `bitbots_msgs/TeamData` | RELIABLE, depth=10 | 1-2 Hz | 队伍共享数据（包含队友信息） |
+| `/team_data` | `BigHeroX_msg/TeamData` | RELIABLE, depth=10 | 1-2 Hz | 队伍共享数据（包含队友信息） |
 | `/diagnostics` | `diagnostic_msgs/DiagnosticArray` | RELIABLE, depth=1 | 1 Hz | 网络诊断信息 |
 
 ##### 订阅话题
@@ -247,10 +248,10 @@ map -> odom -> base_footprint -> base_link -> [各关节和传感器坐标系]
 |---------|---------|-----|------|
 | `/pose_with_covariance` | `geometry_msgs/PoseWithCovarianceStamped` | RELIABLE, depth=1 | 本机器人位姿（用于队伍通信） |
 | `/ball_position_relative_filtered` | `geometry_msgs/PoseWithCovarianceStamped` | RELIABLE, depth=1 | 球位置（用于队伍通信） |
-| `/strategy` | `bitbots_msgs/Strategy` | RELIABLE, depth=1 | 本机器人策略（用于队伍通信） |
-| `/cmd_vel` | `geometry_msgs/Twist` | RELIABLE, depth=1 | 本机器人速度（用于队伍通信） |
+| `/strategy` | `BigHeroX_msg/Strategy` | RELIABLE, depth=1 | 本机器人策略（用于队伍通信） |
+| `/motion_cmd` | `BigHeroX_msg/MotionCommand` | RELIABLE, depth=1 | 本机器人速度（用于队伍通信） |
 | `/time_to_ball` | `std_msgs/Float32` | RELIABLE, depth=1 | 到球时间（用于队伍通信） |
-| `/robots_relative` | `bitbots_msgs/RobotRelativeArray` | RELIABLE, depth=1 | 检测到的机器人（用于队伍通信） |
+| `/robots_relative` | `BigHeroX_msg/RobotRelativeArray` | RELIABLE, depth=1 | 检测到的机器人（用于队伍通信） |
 
 ### QoS 配置说明
 
@@ -275,20 +276,24 @@ map -> odom -> base_footprint -> base_link -> [各关节和传感器坐标系]
 
 **Goal**：
 ```
-string animation_name  # 动画名称（如 "kick_left", "stand_up_front"）
-bool hcm              # 是否由 HCM 触发
+std_msgs/Header header
+int64 timestamp           # 纳秒时间戳
+int64 index               # 消息序列号
+string animation          # 动画名称，对应 RemoteControlChange_ model 值
+bool hcm                  # 是否来自 HCM（高优先级）
+bool bounds               # 是否检查关节限位
+uint8 start               # 起始帧
+uint8 end                 # 结束帧
 ```
 
 **Result**：
 ```
-bool success          # 是否成功完成
-string message        # 结果消息
+bool successful
 ```
 
 **Feedback**：
 ```
-float32 percent_done  # 完成百分比
-string current_state  # 当前状态
+uint8 percent_done
 ```
 
 #### 踢球 Action
@@ -297,10 +302,15 @@ string current_state  # 当前状态
 
 **Goal**：
 ```
-geometry_msgs/Point ball_position  # 球的位置
-geometry_msgs/Vector3 kick_direction  # 踢球方向
-float32 kick_speed    # 踢球速度
-uint8 kick_foot       # 踢球脚（LEFT=1, RIGHT=2）
+std_msgs/Header header
+int64 timestamp           # 纳秒时间戳
+int64 index               # 消息序列号
+geometry_msgs/Point ball_position
+geometry_msgs/Vector3 kick_direction
+float32 kick_speed
+uint8 FOOT_LEFT = 1
+uint8 FOOT_RIGHT = 2
+uint8 kick_foot
 ```
 
 **Result**：
@@ -311,8 +321,8 @@ string message
 
 **Feedback**：
 ```
-string state          # 当前状态（APPROACHING, KICKING, FINISHING）
-float32 distance_to_ball  # 到球距离
+string state              # 当前状态（APPROACHING, KICKING, FINISHING）
+float32 distance_to_ball
 ```
 
 
@@ -324,22 +334,29 @@ float32 distance_to_ball  # 到球距离
 
 ```
 std_msgs/Header header
+int64 timestamp
+int64 index
 
 uint8 STATE_INITIAL = 0
 uint8 STATE_READY = 1
 uint8 STATE_SET = 2
 uint8 STATE_PLAYING = 3
 uint8 STATE_FINISHED = 4
+uint8 state              # RoboCup 比赛状态
 
-uint8 state
+# 对齐 SDK RemoteControlChange_（话题 /change_cmd）
+string change_key        # "status" | "model" | "name"
+string change_value      # 对应枚举值
 ```
 
-**说明**：表示机器人当前的比赛状态，与 GameController 状态对应。
+**说明**：兼容两种模式——`state` 字段对应 GameController 比赛状态；`change_key/change_value` 对齐 SDK `RemoteControlChange_` 的 key-value 切换接口。
 
 #### Strategy（策略）
 
 ```
 std_msgs/Header header
+int64 timestamp
+int64 index
 
 # 角色定义
 uint8 ROLE_UNDEFINED = 0
@@ -376,6 +393,8 @@ uint8 offensive_side
 
 ```
 std_msgs/Header header
+int64 timestamp
+int64 index
 
 uint8 robot_id
 
@@ -427,13 +446,26 @@ float32[9] covariance
 
 ```
 std_msgs/Header header
+int64 timestamp
+int64 index
 RobotRelative[] robots
+```
+
+#### FieldFeatureArray（场地特征数组）
+
+```
+std_msgs/Header header
+int64 timestamp
+int64 index
+FieldFeature[] features
 ```
 
 #### HeadMode（头部模式）
 
 ```
 std_msgs/Header header
+int64 timestamp
+int64 index
 
 uint8 MODE_FIXED = 0           # 固定方向
 uint8 MODE_TRACK_BALL = 1      # 跟踪球
@@ -441,7 +473,7 @@ uint8 MODE_SCAN_FIELD = 2      # 扫描场地
 uint8 MODE_LOOK_AT_POINT = 3   # 看向指定点
 uint8 mode
 
-# 当 mode=MODE_FIXED 或 MODE_LOOK_AT_POINT 时使用
+# 当 mode=MODE_LOOK_AT_POINT 时使用
 geometry_msgs/Point target_point
 
 # 当 mode=MODE_FIXED 时使用（关节角度）
@@ -455,45 +487,42 @@ float32 tilt_angle  # 俯仰角度（弧度）
 #### JointCommand（关节命令）
 
 ```
-std_msgs/Header header
+std_msgs/Header header   # ROS2 内部使用
 
-# 标记是否来自 HCM（高优先级）
-bool from_hcm
+# 元数据（对齐 SDK AllJointCmd_）
+int64 timestamp          # 纳秒时间戳，对齐 timestamp_
+int64 index              # 消息序列号，对齐 index_
+uint8 cmd_type           # 控制模式，对齐 cmd_type_
 
-# 关节名称列表
-string[] joint_names
+bool from_hcm            # 是否来自 HCM（高优先级，ROS2 内部语义）
 
-# 目标位置（弧度）
-float64[] positions
+string[] joint_names     # 关节名称（ROS2 内部使用，SDK 按索引访问）
 
-# 速度限制（弧度/秒，-1.0 表示最大速度）
-float64[] velocities
-
-# 加速度限制（弧度/秒²，-1.0 表示最大加速度）
-float64[] accelerations
-
-# 最大电流限制（安培，-1.0 表示最大电流）
-float64[] max_currents
+# 控制参数（对齐 SDK JointCmd_ 字段）
+float64[] joint_pos      # 关节目标位置（rad），对齐 joint_pos_
+float64[] joint_vel      # 关节目标速度（rad/s），对齐 joint_vel_
+float64[] joint_torque   # 关节目标力矩（N·m），对齐 joint_torque_
+float64[] kp             # 位置控制比例系数，对齐 kp_
+float64[] kd             # 速度控制比例系数，对齐 kd_
 ```
 
-**说明**：关节控制命令，包含位置、速度、加速度和电流限制。
+**说明**：关节控制命令，对齐 SDK `AllJointCmd_` + `JointCmd_` 结构。话题 `rt/all_joint_cmd`（底层 DDS 接口）。
 
 #### KickGoal（踢球目标）
 
 ```
-# 踢球脚
+std_msgs/Header header
+int64 timestamp
+int64 index
+
 uint8 FOOT_LEFT = 1
 uint8 FOOT_RIGHT = 2
 uint8 kick_foot
 
-# 踢球力度 [0.0, 1.0]
-float32 kick_strength
+float32 kick_strength   # 踢球力度 [0.0, 1.0]
+float32 kick_direction  # 踢球方向（相对于机器人朝向，弧度）
 
-# 踢球方向（相对于机器人朝向，弧度）
-float32 kick_direction
-
-# 球的相对位置（可选，用于动态踢球）
-geometry_msgs/Point ball_position
+geometry_msgs/Point ball_position  # 球的相对位置（base_footprint 坐标系）
 ```
 
 **说明**：踢球命令，指定踢球脚、力度和方向。
@@ -518,13 +547,6 @@ geometry_msgs/Vector3 direction
 float32 confidence
 ```
 
-#### FieldFeatureArray（场地特征数组）
-
-```
-std_msgs/Header header
-FieldFeature[] features
-```
-
 ### 时序图
 
 #### 比赛状态转换时序
@@ -540,21 +562,21 @@ sequenceDiagram
     CM->>DM: /gamestate (READY)
     DM->>DM: 更新状态机
     DM->>MM: /robot_state (READY)
-    DM->>MM: /cmd_vel (移动到初始位置)
+    DM->>MM: /motion_cmd (移动到初始位置)
     MM->>MM: 执行行走
     
     GC->>CM: UDP Broadcast (SET)
     CM->>DM: /gamestate (SET)
     DM->>DM: 更新状态机
     DM->>MM: /robot_state (SET)
-    DM->>MM: /cmd_vel (0, 0, 0) 停止
+    DM->>MM: /motion_cmd (vx=0,vy=0,vyaw=0) 停止
     MM->>MM: 停止运动
     
     GC->>CM: UDP Broadcast (PLAYING)
     CM->>DM: /gamestate (PLAYING)
     DM->>DM: 更新状态机
     DM->>MM: /robot_state (PLAYING)
-    DM->>MM: /cmd_vel (激活行为)
+    DM->>MM: /motion_cmd (激活行为)
     MM->>MM: 执行比赛行为
 ```
 
@@ -573,7 +595,7 @@ sequenceDiagram
     PM->>DM: /ball_position_relative_filtered
     
     DM->>DM: 规划行为
-    DM->>MM: /cmd_vel (接近球)
+    DM->>MM: /motion_cmd (接近球)
     MM->>MM: 执行行走
     
     DM->>DM: 判断踢球条件
